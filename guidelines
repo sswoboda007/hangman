@@ -1,0 +1,26 @@
+1. Hangman (simple GUI)
+Concept: Classic word guessing game.
+
+Features / Files:
+
+- wordBank.py – provides word lists, categories.
+- gameLogic.py – handles guesses, tracking used letters, win/loss conditions.
+- ioCli.py or ui_tkinter.py – CLI or GUI handling.
+- main.py – wires everything together.
+- test_wordBank.py
+- test_gameLogic.py
+- test_ioCli.py
+- test_main.py
+
+Good for tests:
+Verifying win/loss when last guess is used.
+Checking display of partially guessed words.
+Ensuring letters can’t be guessed twice.
+Testing random word selection with seeding.
+
+
+python main.py      # run the GUI
+python main.py -c   # run the CLI
+
+python -m unittest discover hangmanTests
+python -m unittest  # run all tests
