@@ -11,7 +11,7 @@ for the game.
 Author: @seanl
 Version: 1.0.0
 Creation Date: 11/20/2025
-Last Updated: 11/20/2025
+Last Updated: 11/21/2025
 """
 
 import unittest
@@ -49,6 +49,15 @@ class TestWordBank(unittest.TestCase):
         word = self.word_bank.getRandomWord(DEFAULT_CATEGORY)
         self.assertIsInstance(word, str)
         self.assertGreater(len(word), 0)
+
+    def testGetRandomWordRaisesErrorForEmptyCategory(self) -> None:
+        """
+        Ensure getRandomWord raises ValueError for an empty category.
+        """
+        empty_category = "empty"
+        self.word_bank.categories[empty_category] = []
+        with self.assertRaises(ValueError):
+            self.word_bank.getRandomWord(empty_category)
 
 
 if __name__ == "__main__":

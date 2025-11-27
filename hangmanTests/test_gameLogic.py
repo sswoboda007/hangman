@@ -10,7 +10,7 @@ class. It tests game state, guess processing, and win/loss conditions.
 Author: @seanl
 Version: 1.0.0
 Creation Date: 11/20/2025
-Last Updated: 11/20/2025
+Last Updated: 11/21/2025
 """
 
 import unittest
@@ -67,13 +67,62 @@ class TestHangmanGame(unittest.TestCase):
         """
         Too many wrong guesses should result in a loss.
         """
-        # Guess unique incorrect letters up to the max_attempts limit.
-        # The previous implementation repeatedly guessed 'z', but the game
-        # logic correctly ignores duplicate guesses after the first one.
         wrong_letters = "abcdfghijklmnopqrsuvwxyz"
         for i in range(self.game.max_attempts):
             self.game.processGuess(wrong_letters[i])
         self.assertTrue(self.game.isLost())
+
+    def test_resetGame(self) -> None:
+        """
+        Verify that resetGame correctly re-initializes the game state.
+        """
+        self.game.processGuess("t")
+        self.game.processGuess("x") # wrong guess
+        self.game.resetGame("newword")
+        self.assertEqual(self.game.secret_word, "newword")
+        self.assertEqual(len(self.game.used_letters), 0)
+        self.assertEqual(self.game.wrong_guesses, 0)
+
+    def test_getMaskedWord(self) -> None:
+        """
+        Verify that getMaskedWord returns the correctly formatted masked word.
+        """
+        game = HangmanGame("hangman")
+        self.assertEqual(game.getMaskedWord(), "_ _ _ _ _ _ _")
+        game.processGuess("a")
+        self.assertEqual(game.getMaskedWord(), "_ a _ _ _ a _")
+
+    def test_processGuess_invalid_input(self) -> None:
+        """
+        Verify that processGuess handles invalid (non-alphabetic, multi-char) input.
+        """
+        result = self.game.processGuess("1")
+        self.assertFalse(result)
+        self.assertEqual(len(self.game.used_letters), 0)
+
+    def test_processGuess_already_used_letter(self) -> None:
+        """
+        Verify that processGuess handles already used letters correctly.
+        """
+        self.game.processGuess("t")
+        result = self.game.processGuess("t")
+        self.assertFalse(result)
+        self.assertEqual(self.game.wrong_guesses, 0)
+
+    def test_isFinished(self) -> None:
+        """
+        Verify that isFinished correctly identifies the end of a game.
+        """
+        # Test win condition
+        game_win = HangmanGame("hi", max_attempts=1)
+        game_win.processGuess("h")
+        game_win.processGuess("i")
+        self.assertTrue(game_win.isFinished())
+
+        # Test lose condition
+        game_lose = HangmanGame("hi", max_attempts=1)
+        game_lose.processGuess("x")
+        self.assertTrue(game_lose.isFinished())
 
 
 if __name__ == "__main__":
