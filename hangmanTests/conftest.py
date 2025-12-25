@@ -8,9 +8,9 @@ tkinter for headless environments where system libraries might be missing.
 This code runs before any tests are collected, preventing ImportError.
 
 Author: @seanl
-Version: 1.0.1
+Version: 1.1.0
 Creation Date: 12/24/2025
-Last Updated: 12/24/2025
+Last Updated: 12/25/2025
 """
 
 import sys
@@ -33,6 +33,7 @@ mock_tk.Button = MagicMock
 mock_tk.Entry = MagicMock
 mock_tk.StringVar = MagicMock
 mock_tk.OptionMenu = MagicMock
+mock_tk.Canvas = MagicMock
 
 # Mock messagebox specifically
 mock_tk.messagebox = MagicMock()

@@ -9,12 +9,12 @@ provides an optional command-line interface for the game. These tests ensure
 the game loop handles both win and loss conditions correctly.
 
 Author: @seanl
-Version: 2.0.0
+Version: 2.1.0
 Creation Date: 11/20/2025
-Last Updated: 11/22/2025
+Last Updated: 12/25/2025
 """
 
-from unittest.mock import patch
+from unittest.mock import patch, call
 
 import pytest
 
@@ -61,7 +61,11 @@ def testRunGameLoopWinCondition(cli_dependencies) -> None:
          patch('builtins.print') as mock_print:
         cli.runGameLoop()
 
-        # The final print call should be the win message
+        # Verify intermediate game state prints
+        # We expect calls like: print("\nWord:", "_ _"), print("Wrong guesses: 0/6")
+        # Then after 'h': print("\nWord:", "h _"), print("Wrong guesses: 0/6")
+        
+        # Check for the final win message
         final_message = mock_print.call_args_list[-1][0][0]
         assert "You won!" in final_message
         assert secret_word in final_message
@@ -86,7 +90,36 @@ def testRunGameLoopLossCondition(cli_dependencies) -> None:
          patch('builtins.print') as mock_print:
         cli.runGameLoop()
 
-        # The final print call should be the loss message
+        # Check for the final loss message
         final_message = mock_print.call_args_list[-1][0][0]
         assert "You lost!" in final_message
         assert secret_word in final_message
+
+
+def testRunGameLoopPrintsState(cli_dependencies) -> None:
+    """
+    Verify that the CLI prints the masked word and wrong guess count during the loop.
+    """
+    word_bank, game_factory = cli_dependencies
+    secret_word = "a"
+    
+    cli = HangmanCli(word_bank=word_bank, game_factory=game_factory)
+    cli.game = game_factory(secret_word)
+    
+    # Input 'z' (wrong), then 'a' (correct/win)
+    user_inputs = ["z", "a"]
+    
+    with patch('builtins.input', side_effect=user_inputs), \
+         patch('builtins.print') as mock_print:
+        cli.runGameLoop()
+        
+        # Verify specific print calls occurred
+        # Initial state
+        assert call("\nWord:", "_") in mock_print.call_args_list
+        assert call("Wrong guesses: 0/6") in mock_print.call_args_list
+        
+        # After wrong guess 'z'
+        assert call("Wrong guesses: 1/6") in mock_print.call_args_list
+        
+        # Win message
+        assert call(f"You won! The word was: {secret_word}") in mock_print.call_args_list

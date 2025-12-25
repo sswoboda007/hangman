@@ -9,9 +9,9 @@ It uses extensive mocking to isolate the GUI logic from the Tkinter framework,
 allowing tests to run in a headless environment without a display.
 
 Author: @seanl
-Version: 2.0.3
+Version: 2.2.0
 Creation Date: 11/21/2025
-Last Updated: 12/24/2025
+Last Updated: 12/25/2025
 """
 
 import tkinter as tk
@@ -70,6 +70,10 @@ def hangmanApp():
             MagicMock(name="InputFrame"),
         ]
 
+        mock_canvas = stack.enter_context(patch('tkinter.Canvas'))
+        canvas = MagicMock(name="Canvas")
+        mock_canvas.return_value = canvas
+
         word_bank = MagicMock(spec=WordBank)
         word_bank.getRandomWord.return_value = "test"
         word_bank.getCategories.return_value = ["general", "animals"]
@@ -99,6 +103,7 @@ def hangmanApp():
             inputEntry=input_entry,
             guessButton=guess_button,
             resetButton=reset_button,
+            canvas=canvas,
         )
 
 
@@ -108,6 +113,8 @@ def testInitSetsUpGameAndWidgets(hangmanApp) -> None:
     assert ns.app.game is ns.gameInstance
     ns.inputEntry.config.assert_called_with(state=tk.NORMAL)
     ns.guessButton.config.assert_called_with(state=tk.NORMAL)
+    # Verify canvas creation
+    assert ns.app.canvas is ns.canvas
 
 
 def testStartNewGameRefreshesUiState(hangmanApp) -> None:
@@ -117,6 +124,7 @@ def testStartNewGameRefreshesUiState(hangmanApp) -> None:
     ns.infoLabel.config.reset_mock()
     ns.inputEntry.config.reset_mock()
     ns.guessButton.config.reset_mock()
+    ns.canvas.delete.reset_mock()
 
     ns.app.current_category = "animals"
     ns.wordBank.getRandomWord.return_value = "kangaroo"
@@ -128,6 +136,7 @@ def testStartNewGameRefreshesUiState(hangmanApp) -> None:
     assert ns.infoLabel.config.call_count == 1
     ns.inputEntry.config.assert_called_with(state=tk.NORMAL)
     ns.guessButton.config.assert_called_with(state=tk.NORMAL)
+    ns.canvas.delete.assert_called_with("all")
 
 
 def testOnCategoryChangedUpdatesStateAndRestarts(hangmanApp) -> None:
@@ -138,6 +147,19 @@ def testOnCategoryChangedUpdatesStateAndRestarts(hangmanApp) -> None:
     with patch.object(ns.app, '_startNewGame') as mock_start:
         ns.app._onCategoryChanged("animals")
         assert ns.app.current_category == "animals"
+        mock_start.assert_called_once_with()
+
+
+def testOnCategoryChangedHandlesNoneVar(hangmanApp) -> None:
+    """
+    Test defensive check: _onCategoryChanged should handle case where category_var is None.
+    """
+    ns = hangmanApp
+    ns.app.category_var = None
+    
+    with patch.object(ns.app, '_startNewGame') as mock_start:
+        ns.app._onCategoryChanged("fruits")
+        assert ns.app.current_category == "fruits"
         mock_start.assert_called_once_with()
 
 
@@ -155,19 +177,43 @@ def testUpdateLabelsRefreshesWordAndInfo(hangmanApp) -> None:
     )
 
 
+def testUpdateInfoLabelReturnsIfComponentsNone(hangmanApp) -> None:
+    """
+    Test defensive check: _updateInfoLabel should return early if game or label is None.
+    """
+    ns = hangmanApp
+    
+    # Case 1: game is None
+    ns.app.game = None
+    ns.infoLabel.config.reset_mock()
+    ns.app._updateInfoLabel()
+    ns.infoLabel.config.assert_not_called()
+
+    # Restore game, set label to None
+    ns.app.game = ns.gameInstance
+    ns.app.info_label = None
+    ns.app._updateInfoLabel()
+    # No crash expected
+    
+    # Restore label for other tests if needed (though fixture resets)
+    ns.app.info_label = ns.infoLabel
+
+
 def testProcessCurrentGuessHandlesInputAndUpdatesUi(hangmanApp) -> None:
     ns = hangmanApp
     ns.inputEntry.get.return_value = "E"
     ns.gameInstance.processGuess.reset_mock()
 
     with patch.object(ns.app, '_updateWordLabel') as mock_update_word, \
-         patch.object(ns.app, '_updateInfoLabel') as mock_update_info:
+         patch.object(ns.app, '_updateInfoLabel') as mock_update_info, \
+         patch.object(ns.app, '_updateCanvas') as mock_update_canvas:
         ns.app._processCurrentGuess()
 
     ns.gameInstance.processGuess.assert_called_once_with("E")
     ns.inputEntry.delete.assert_called_once_with(0, tk.END)
     mock_update_word.assert_called_once_with()
     mock_update_info.assert_called_once_with()
+    mock_update_canvas.assert_called_once_with()
 
 
 def testProcessCurrentGuessIgnoresEmptyInput(hangmanApp) -> None:
@@ -180,6 +226,25 @@ def testProcessCurrentGuessIgnoresEmptyInput(hangmanApp) -> None:
 
     ns.inputEntry.delete.assert_called_once_with(0, tk.END)
     ns.gameInstance.processGuess.assert_not_called()
+
+
+def testProcessCurrentGuessReturnsIfComponentsNone(hangmanApp) -> None:
+    """
+    Test defensive check: _processCurrentGuess should return early if game or entry is None.
+    """
+    ns = hangmanApp
+    
+    # Case 1: game is None
+    ns.app.game = None
+    ns.inputEntry.get.reset_mock()
+    ns.app._processCurrentGuess()
+    ns.inputEntry.get.assert_not_called()
+
+    # Restore game, set entry to None
+    ns.app.game = ns.gameInstance
+    ns.app.input_entry = None
+    ns.app._processCurrentGuess()
+    # No crash expected
 
 
 def testProcessCurrentGuessHandlesWinAndLoss(hangmanApp) -> None:
@@ -208,6 +273,32 @@ def testProcessCurrentGuessHandlesWinAndLoss(hangmanApp) -> None:
     ns.messagebox.showinfo.assert_called_with("Hangman", "You lost! The word was: test")
     ns.inputEntry.config.assert_called_with(state=tk.DISABLED)
     ns.guessButton.config.assert_called_with(state=tk.DISABLED)
+
+
+def testHandleWinHandlesNoneGame(hangmanApp) -> None:
+    """
+    Test defensive check: _handleWin should not crash if game is None.
+    """
+    ns = hangmanApp
+    ns.app.game = None
+    ns.messagebox.showinfo.reset_mock()
+    
+    ns.app._handleWin()
+    
+    ns.messagebox.showinfo.assert_not_called()
+
+
+def testHandleLossHandlesNoneGame(hangmanApp) -> None:
+    """
+    Test defensive check: _handleLoss should not crash if game is None.
+    """
+    ns = hangmanApp
+    ns.app.game = None
+    ns.messagebox.showinfo.reset_mock()
+    
+    ns.app._handleLoss()
+    
+    ns.messagebox.showinfo.assert_not_called()
 
 
 def testOnGuessSubmitDelegatesToProcess(hangmanApp) -> None:
@@ -272,3 +363,98 @@ def testOnResetButtonClickedStartsNewGame(hangmanApp) -> None:
     with patch.object(ns.app, '_startNewGame') as mock_start:
         ns.app._onResetButtonClicked()
         mock_start.assert_called_once_with()
+
+def testUpdateWordLabelHandlesNone(hangmanApp) -> None:
+    """
+    Test defensive check: _updateWordLabel should not crash if game or label is None.
+    """
+    ns = hangmanApp
+    
+    # Case 1: game is None
+    ns.app.game = None
+    ns.wordLabel.config.reset_mock()
+    ns.app._updateWordLabel()
+    ns.wordLabel.config.assert_not_called()
+    
+    # Case 2: label is None
+    ns.app.game = ns.gameInstance
+    ns.app.word_label = None
+    ns.app._updateWordLabel()
+    # No crash expected
+    
+    # Restore label
+    ns.app.word_label = ns.wordLabel
+
+def testDisableInputHandlesNoneWidgets(hangmanApp) -> None:
+    """
+    Test defensive check: _disableInput should not crash if widgets are None.
+    """
+    ns = hangmanApp
+    ns.app.input_entry = None
+    ns.app.guess_button = None
+    
+    # Should not raise AttributeError
+    ns.app._disableInput()
+    
+    # Restore widgets
+    ns.app.input_entry = ns.inputEntry
+    ns.app.guess_button = ns.guessButton
+
+def testEnableInputHandlesNoneWidgets(hangmanApp) -> None:
+    """
+    Test defensive check: _enableInput should not crash if widgets are None.
+    """
+    ns = hangmanApp
+    ns.app.input_entry = None
+    ns.app.guess_button = None
+    
+    # Should not raise AttributeError
+    ns.app._enableInput()
+    
+    # Restore widgets
+    ns.app.input_entry = ns.inputEntry
+    ns.app.guess_button = ns.guessButton
+
+def testUpdateCanvasDrawsBodyParts(hangmanApp) -> None:
+    """
+    Test that _updateCanvas draws the correct body parts based on wrong guesses.
+    """
+    ns = hangmanApp
+    ns.canvas.delete.reset_mock()
+    ns.canvas.create_line.reset_mock()
+    ns.canvas.create_oval.reset_mock()
+
+    # Simulate 6 wrong guesses
+    ns.app.game.wrong_guesses = 6
+    ns.app._updateCanvas()
+
+    # Should clear canvas
+    ns.canvas.delete.assert_called_with("all")
+
+    # Should draw gallows (4 lines)
+    # Should draw head (1 oval)
+    # Should draw body, arms, legs (5 lines)
+    # Total lines = 4 (gallows) + 5 (body parts) = 9
+    assert ns.canvas.create_line.call_count == 9
+    assert ns.canvas.create_oval.call_count == 1
+
+def testUpdateCanvasHandlesNone(hangmanApp) -> None:
+    """
+    Test defensive check: _updateCanvas should not crash if game or canvas is None.
+    """
+    ns = hangmanApp
+    
+    # Case 1: game is None
+    ns.app.game = None
+    ns.canvas.delete.reset_mock()
+    ns.app._updateCanvas()
+    ns.canvas.delete.assert_not_called()
+    
+    # Case 2: canvas is None
+    ns.app.game = ns.gameInstance
+    ns.app.canvas = None
+    ns.app._updateCanvas()
+    # No crash expected
+    
+    # Restore canvas
+    ns.app.canvas = ns.canvas

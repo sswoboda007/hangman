@@ -8,9 +8,9 @@ This test suite covers the core game logic encapsulated in the HangmanGame
 class. It tests game state, guess processing, and win/loss conditions.
 
 Author: @seanl
-Version: 1.0.0
+Version: 1.1.1
 Creation Date: 11/20/2025
-Last Updated: 11/21/2025
+Last Updated: 12/25/2025
 """
 
 import unittest
@@ -123,6 +123,45 @@ class TestHangmanGame(unittest.TestCase):
         game_lose = HangmanGame("hi", max_attempts=1)
         game_lose.processGuess("x")
         self.assertTrue(game_lose.isFinished())
+
+    def testSecretWordCaseInsensitivity(self) -> None:
+        """
+        Verify that the game handles mixed-case secret words by normalizing them.
+        """
+        game = HangmanGame("TeSt")
+        self.assertEqual(game.secret_word, "test")
+        
+        # Guessing lowercase 't' should work
+        self.assertTrue(game.processGuess("t"))
+        # Guessing uppercase 'E' should work (processGuess normalizes input too)
+        self.assertTrue(game.processGuess("E"))
+        # Guessing 's' to complete the word
+        self.assertTrue(game.processGuess("s"))
+        
+        self.assertTrue(game.isWon())
+
+    def testRepeatedCorrectGuessDoesNotPenalize(self) -> None:
+        """
+        Verify that guessing a correct letter again returns False (no-op) 
+        but does NOT increment wrong_guesses.
+        """
+        self.game.processGuess("t")
+        initial_wrong = self.game.wrong_guesses
+        
+        # Guess 't' again
+        result = self.game.processGuess("t")
+        
+        self.assertFalse(result) # Should return False as it's already used
+        self.assertEqual(self.game.wrong_guesses, initial_wrong) # No penalty
+
+    def testZeroMaxAttempts(self) -> None:
+        """
+        Edge case: Game initialized with 0 max attempts.
+        Should be lost immediately if not won immediately (which is impossible with 0 guesses).
+        """
+        game = HangmanGame("test", max_attempts=0)
+        self.assertTrue(game.isLost())
+        self.assertTrue(game.isFinished())
 
 
 if __name__ == "__main__":

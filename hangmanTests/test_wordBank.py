@@ -9,9 +9,9 @@ it correctly manages word categories, retrieves words, and provides random words
 for the game.
 
 Author: @seanl
-Version: 1.0.0
+Version: 1.1.0
 Creation Date: 11/20/2025
-Last Updated: 11/21/2025
+Last Updated: 12/25/2025
 """
 
 import unittest
@@ -54,10 +54,24 @@ class TestWordBank(unittest.TestCase):
         """
         Ensure getRandomWord raises ValueError for an empty category.
         """
-        empty_category = "empty"
+        # Create a category with an empty list explicitly
+        empty_category = "empty_test_category"
         self.word_bank.categories[empty_category] = []
-        with self.assertRaises(ValueError):
+        
+        # Verify that accessing this category raises ValueError
+        # This should hit line 55: raise ValueError(...)
+        with self.assertRaises(ValueError) as cm:
             self.word_bank.getRandomWord(empty_category)
+        
+        self.assertIn(f"No words available for category '{empty_category}'", str(cm.exception))
+
+    def testGetWordsForNonExistentCategoryReturnsDefault(self) -> None:
+        """
+        Ensure requesting a non-existent category falls back to default.
+        """
+        words = self.word_bank.getWordsForCategory("non_existent")
+        default_words = self.word_bank.getWordsForCategory(DEFAULT_CATEGORY)
+        self.assertEqual(words, default_words)
 
 
 if __name__ == "__main__":

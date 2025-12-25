@@ -9,9 +9,9 @@ interface for the Hangman game. It handles user interactions, displays game
 state, and communicates with the core game logic.
 
 Author: @seanl
-Version: 1.0.1
+Version: 1.1.0
 Creation Date: 11/20/2025
-Last Updated: 12/24/2025
+Last Updated: 12/25/2025
 """
 
 import tkinter as tk
@@ -51,6 +51,7 @@ class HangmanApp(tk.Tk):
         self.game: Optional[HangmanGame] = None
         self.current_category: str = DEFAULT_CATEGORY
 
+        self.canvas: Optional[tk.Canvas] = None
         self.word_label: Optional[tk.Label] = None
         self.info_label: Optional[tk.Label] = None
         self.input_entry: Optional[tk.Entry] = None
@@ -85,6 +86,10 @@ class HangmanApp(tk.Tk):
             command=self._onCategoryChanged,
         )
         self.category_menu.pack(side="left", padx=(5, 0))
+
+        # Canvas for Hangman drawing
+        self.canvas = tk.Canvas(main_frame, width=200, height=250, bg="white")
+        self.canvas.pack(pady=(0, 10))
 
         # Masked word label
         self.word_label = tk.Label(
@@ -149,6 +154,7 @@ class HangmanApp(tk.Tk):
         self.game = self.game_factory(secret_word)
         self._updateWordLabel()
         self._updateInfoLabel()
+        self._updateCanvas()
         self._enableInput()
 
     def _updateWordLabel(self) -> None:
@@ -173,6 +179,36 @@ class HangmanApp(tk.Tk):
             f"Remaining attempts: {remaining_attempts}"
         )
         self.info_label.config(text=info_text)
+
+    def _updateCanvas(self) -> None:
+        """
+        Redraw the gallows and the hangman based on wrong guesses.
+        """
+        if self.game is None or self.canvas is None:
+            return
+
+        self.canvas.delete("all")
+
+        # Draw Gallows
+        self.canvas.create_line(50, 230, 150, 230, width=3)  # Base
+        self.canvas.create_line(100, 230, 100, 50, width=3)  # Pole
+        self.canvas.create_line(100, 50, 150, 50, width=3)   # Top
+        self.canvas.create_line(150, 50, 150, 80, width=3)   # Rope
+
+        wrong = self.game.wrong_guesses
+
+        if wrong >= 1:  # Head
+            self.canvas.create_oval(135, 80, 165, 110, width=2)
+        if wrong >= 2:  # Body
+            self.canvas.create_line(150, 110, 150, 170, width=2)
+        if wrong >= 3:  # Left Arm
+            self.canvas.create_line(150, 130, 130, 150, width=2)
+        if wrong >= 4:  # Right Arm
+            self.canvas.create_line(150, 130, 170, 150, width=2)
+        if wrong >= 5:  # Left Leg
+            self.canvas.create_line(150, 170, 130, 200, width=2)
+        if wrong >= 6:  # Right Leg
+            self.canvas.create_line(150, 170, 170, 200, width=2)
 
     def _onGuessSubmit(self, event: tk.Event) -> None:  # type: ignore[name-defined]
         """
@@ -203,6 +239,7 @@ class HangmanApp(tk.Tk):
         self.game.processGuess(letter)
         self._updateWordLabel()
         self._updateInfoLabel()
+        self._updateCanvas()
 
         if self.game.isWon():
             self._handleWin()

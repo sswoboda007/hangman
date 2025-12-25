@@ -5,16 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f18c9db2-1606-4a36-9686-faa3ff984228" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/hangmanTests/conftest.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AGENTS.md" beforeDir="false" afterPath="$PROJECT_DIR$/AGENTS.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/LOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/guidelines" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/hangmanTests/conftest.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/conftest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hangmanTests/test_gameLogic.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_gameLogic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hangmanTests/test_ioCli.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_ioCli.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hangmanTests/test_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/hangmanTests/test_uiTkinter.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_uiTkinter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ioCli.py" beforeDir="false" afterPath="$PROJECT_DIR$/ioCli.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hangmanTests/test_wordBank.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_wordBank.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/uiTkinter.py" beforeDir="false" afterPath="$PROJECT_DIR$/uiTkinter.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -64,7 +61,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "com.google.cloudcode.ide_session_index": "20251224_0002",
+    "com.google.cloudcode.ide_session_index": "20251224_0003",
     "git-widget-placeholder": "master",
     "last_opened_file_path": "C:/Users/seanl/pythonProjects/hangman",
     "settings.editor.selected.configurable": "preferences.pluginManager"
@@ -73,7 +70,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-a101402ee41c-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28238.29" />
+        <option value="bundled-python-sdk-07523f343e4f-968fe969f28a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.28539.27" />
       </set>
     </attachedChunks>
   </component>
