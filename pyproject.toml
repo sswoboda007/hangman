@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hangman"
+version = "1.0.0"
+description = "A simple Hangman game with Tkinter GUI"
+authors = [
+  { name = "seanl", email = "seanl@example.com" },
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    # Add runtime dependencies here if any (e.g. requests, flask)
+    # Currently none based on requirements.txt which only has test deps
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-mock",
+]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+testpaths = ["hangmanTests"]

@@ -9,9 +9,9 @@ It uses extensive mocking to isolate the GUI logic from the Tkinter framework,
 allowing tests to run in a headless environment without a display.
 
 Author: @seanl
-Version: 2.0.0
+Version: 2.0.3
 Creation Date: 11/21/2025
-Last Updated: 11/22/2025
+Last Updated: 12/24/2025
 """
 
 import tkinter as tk
@@ -29,45 +29,41 @@ from wordBank import WordBank
 @pytest.fixture
 def hangmanApp():
     with ExitStack() as stack:
-        def fakeTkInit(instance: tk.Tk, *args, **kwargs) -> None:
-            instance.tk = MagicMock(name="tk")
-            instance.tk.call = MagicMock(name="tk.call")
-            instance._w = "mocked_tk"
-            instance.children = {}
+        # Since tkinter is mocked in conftest.py, we don't need to patch Tk.__init__
+        # to prevent the GUI from launching. The global mock handles it.
+        
+        # Remove autospec=True because these are now mocking Mocks (due to conftest.py)
+        mock_messagebox = stack.enter_context(patch('uiTkinter.messagebox'))
 
-        stack.enter_context(patch('tkinter.Tk.__init__', new=fakeTkInit))
-
-        mock_messagebox = stack.enter_context(patch('uiTkinter.messagebox', autospec=True))
-
-        mock_option_menu = stack.enter_context(patch('tkinter.OptionMenu', autospec=True))
+        mock_option_menu = stack.enter_context(patch('tkinter.OptionMenu'))
         mock_option_menu.return_value = MagicMock(name="OptionMenu")
 
-        mock_string_var = stack.enter_context(patch('tkinter.StringVar', autospec=True))
+        mock_string_var = stack.enter_context(patch('tkinter.StringVar'))
         category_var = MagicMock(name="StringVar")
         mock_string_var.return_value = category_var
 
-        mock_button = stack.enter_context(patch('tkinter.Button', autospec=True))
+        mock_button = stack.enter_context(patch('tkinter.Button'))
         guess_button = MagicMock(name="GuessButton")
         guess_button.config = MagicMock(name="GuessButton.config")
         reset_button = MagicMock(name="ResetButton")
         reset_button.config = MagicMock(name="ResetButton.config")
         mock_button.side_effect = [guess_button, reset_button]
 
-        mock_entry = stack.enter_context(patch('tkinter.Entry', autospec=True))
+        mock_entry = stack.enter_context(patch('tkinter.Entry'))
         input_entry = MagicMock(name="Entry")
         input_entry.config = MagicMock(name="Entry.config")
         input_entry.get = MagicMock(name="Entry.get", return_value="")
         input_entry.delete = MagicMock(name="Entry.delete")
         mock_entry.return_value = input_entry
 
-        mock_label = stack.enter_context(patch('tkinter.Label', autospec=True))
+        mock_label = stack.enter_context(patch('tkinter.Label'))
         category_label = MagicMock(name="CategoryLabel")
         word_label = MagicMock(name="WordLabel")
         info_label = MagicMock(name="InfoLabel")
         input_label = MagicMock(name="InputLabel")
         mock_label.side_effect = [category_label, word_label, info_label, input_label]
 
-        mock_frame = stack.enter_context(patch('tkinter.Frame', autospec=True))
+        mock_frame = stack.enter_context(patch('tkinter.Frame'))
         mock_frame.side_effect = [
             MagicMock(name="MainFrame"),
             MagicMock(name="CategoryFrame"),
@@ -84,6 +80,13 @@ def hangmanApp():
         game_instance.processGuess = MagicMock(name="processGuess")
 
         app = HangmanApp(word_bank=word_bank, game_factory=lambda word: game_instance)
+        
+        # Manually inject attributes that might be expected by Tkinter internals or app code
+        # if they were previously set by the fakeTkInit
+        app.tk = MagicMock(name="tk")
+        app.tk.call = MagicMock(name="tk.call")
+        app._w = "mocked_tk"
+        app.children = {}
 
         yield SimpleNamespace(
             app=app,
@@ -129,6 +132,9 @@ def testStartNewGameRefreshesUiState(hangmanApp) -> None:
 
 def testOnCategoryChangedUpdatesStateAndRestarts(hangmanApp) -> None:
     ns = hangmanApp
+    # Configure the mock StringVar to return the expected category
+    ns.categoryVar.get.return_value = "animals"
+
     with patch.object(ns.app, '_startNewGame') as mock_start:
         ns.app._onCategoryChanged("animals")
         assert ns.app.current_category == "animals"

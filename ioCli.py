@@ -44,6 +44,6 @@ class HangmanCli:
             self.game.processGuess(guess)
 
         if self.game.isWon():
-            print("You won! The word was:", self.game.secret_word)
+            print(f"You won! The word was: {self.game.secret_word}")
         else:
-            print("You lost! The word was:", self.game.secret_word)
+            print(f"You lost! The word was: {self.game.secret_word}")

@@ -9,14 +9,14 @@ interface for the Hangman game. It handles user interactions, displays game
 state, and communicates with the core game logic.
 
 Author: @seanl
-Version: 1.0.0
+Version: 1.0.1
 Creation Date: 11/20/2025
-Last Updated: 11/20/2025
+Last Updated: 12/24/2025
 """
 
 import tkinter as tk
 from tkinter import messagebox
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 from gameLogic import HangmanGame
 from wordBank import WordBank, DEFAULT_CATEGORY
@@ -31,6 +31,7 @@ class HangmanApp(tk.Tk):
         self,
         word_bank: WordBank,
         game_factory: Callable[[str], HangmanGame],
+        **kwargs: Any
     ) -> None:
         """
         Initialize the Hangman GUI.
@@ -38,8 +39,9 @@ class HangmanApp(tk.Tk):
         Args:
             word_bank: An instance of WordBank to supply words.
             game_factory: A callable that takes a secret word and returns a HangmanGame.
+            **kwargs: Additional keyword arguments passed to the Tk constructor.
         """
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.title("Hangman")
         self.resizable(False, False)
@@ -62,17 +64,17 @@ class HangmanApp(tk.Tk):
 
     def _setupUserInterface(self) -> None:
         """
-        Build and lay out all GUI widgets.
+        Builds and lays out all GUI widgets.
         """
         main_frame = tk.Frame(self, padx=10, pady=10)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.pack(fill="both", expand=True)
 
         # Category selection
         category_frame = tk.Frame(main_frame)
-        category_frame.pack(fill=tk.X, pady=(0, 10))
+        category_frame.pack(fill="x", pady=(0, 10))
 
         category_label = tk.Label(category_frame, text="Category:")
-        category_label.pack(side=tk.LEFT)
+        category_label.pack(side="left")
 
         self.category_var = tk.StringVar(value=self.current_category)
         categories = self.word_bank.getCategories()
@@ -82,7 +84,7 @@ class HangmanApp(tk.Tk):
             *categories,
             command=self._onCategoryChanged,
         )
-        self.category_menu.pack(side=tk.LEFT, padx=(5, 0))
+        self.category_menu.pack(side="left", padx=(5, 0))
 
         # Masked word label
         self.word_label = tk.Label(
@@ -104,13 +106,13 @@ class HangmanApp(tk.Tk):
 
         # Input + button
         input_frame = tk.Frame(main_frame)
-        input_frame.pack(fill=tk.X, pady=(0, 10))
+        input_frame.pack(fill="x", pady=(0, 10))
 
         input_label = tk.Label(input_frame, text="Guess a letter:")
-        input_label.pack(side=tk.LEFT)
+        input_label.pack(side="left")
 
         self.input_entry = tk.Entry(input_frame, width=5)
-        self.input_entry.pack(side=tk.LEFT, padx=5)
+        self.input_entry.pack(side="left", padx=5)
         self.input_entry.bind("<Return>", self._onGuessSubmit)
 
         self.guess_button = tk.Button(
@@ -118,7 +120,7 @@ class HangmanApp(tk.Tk):
             text="Guess",
             command=self._onGuessButtonClicked,
         )
-        self.guess_button.pack(side=tk.LEFT)
+        self.guess_button.pack(side="left")
 
         # Reset button
         self.reset_button = tk.Button(
@@ -128,12 +130,16 @@ class HangmanApp(tk.Tk):
         )
         self.reset_button.pack(pady=(10, 0))
 
-    def _onCategoryChanged(self, new_category: str) -> None:
+    def _onCategoryChanged(self, new_category: object) -> object | None:
         """
         Handler called when the user selects a new category.
         """
-        self.current_category = new_category
+        if self.category_var is not None:
+            self.current_category = self.category_var.get()
+        else:
+            self.current_category = str(new_category)
         self._startNewGame()
+        return None
 
     def _startNewGame(self) -> None:
         """

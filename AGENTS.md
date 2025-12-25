@@ -1,22 +1,24 @@
 # AGENTS.md — Master Operational Guide for the Hangman Project Agent
-Version: 1.1
-Last Updated: 11/19/2025
+Version: 1.2
+Last Updated: 11/22/2025
 
 ## 1) Purpose and Scope
-This document defines how the development agent works: its mission, process, boundaries, and coordination with other project files. It does not duplicate product requirements; instead, it tells the agent how to work to implement those requirements safely and incrementally.
+This document (AGENTS.md) defines the rules for how the development agent operates. It outlines its mission, process, boundaries, and coordination with other project files.
 
-- Audience: contributors and automation agents working on the hangman project.
-- Goal: ensure safety, traceability, and test-driven, incremental delivery.
+- Audience: The development agent.
+- Goal: Ensure safe, traceable, and test-driven incremental delivery.
 
 ## 2) Relationship to Other Project Docs
-- Rules (authoritative constraints): Separate file named Rules. Those rules are mandatory and take precedence.
-- guidelines (requirements): Single source of truth for user-facing requirements/specifications for the hangman game.
-- LOG.md (verified history): Chronological record of verified outcomes only (PASS/FAIL), with commands and salient outputs.
+- **guidelines.txt**: Describes the current state of the project, future goals, and a tree of current files. This is the source of truth for *what* to build.
+- **AGENTS.md** (this file): Contains the rules of operation. This is the source of truth for *how* to build.
+- **requirements.txt**: Lists the Python packages required for the project.
+- **LOG.md**: A chronological record of verified outcomes (PASS/FAIL) from commands, including salient outputs.
 
 How to use these together:
-1. Read guidelines to understand what to build.
-2. Follow Rules to determine how to build it (incrementally, test-first, one logical operation at a time).
-3. Record verified outcomes in LOG.md after each cycle.
+1. Read **guidelines.txt** to understand the project's goals and current structure.
+2. Follow the rules in **AGENTS.md** (this file) to guide your work.
+3. Use **requirements.txt** to manage project dependencies.
+4. Record all verified outcomes in **LOG.md** after each test cycle.
 
 ## 3) Agent Mission
 Deliver a fully functional Hangman game that:
@@ -27,7 +29,7 @@ Deliver a fully functional Hangman game that:
 - Tracks incorrect guesses and draws parts of the hangman figure.
 - Ends the game with a win or loss message.
 
-Reference: See guidelines for detailed requirements.
+Reference: See **guidelines.txt** for project state and goals.
 
 ## 4) Operating Cycle (Stop-and-Wait)
 The agent follows an incremental, test-driven loop:
@@ -49,7 +51,7 @@ A key part of this cycle is the **Iterative Synthesis** approach to code generat
 - Incremental modifications only; avoid sweeping refactors.
 - Do not move/rename/delete files or restructure without explicit approval. Propose first with rationale.
 - Automatic updates allowed without special approval: formatting, non-critical comments/docs, and standard bug fixes.
-- Controlled files (require explicit approval before modifying): AGENTS.md and guidelines.
+- Controlled files (require explicit approval before modifying): AGENTS.md and guidelines.txt.
 
 ## 6) Coding & Documentation Standards (Summary)
 Follow these technical standards when editing or adding Python modules:
@@ -95,7 +97,7 @@ dependencies/interactions.
 Author: @seanl
 Version: 0001 # R-21
 Creation Date: 08/27/2025
-Last Updated: 11/19/2025
+Last Updated: 11/22/2025
 """
 
 from __future__ import annotations
@@ -119,17 +121,17 @@ def exampleInternalFunction(arg1: int) -> int:
     return arg1 + 1
 
 ## 10) Allocation of Content Across Files
-- AGENTS.md (this file): How we work. Mission, rules interface, cycle, standards, focus, commands, examples.
-- Rules (separate file): Binding constraints and procedures. Agent must comply fully.
-- guidelines: Product requirements, implementation strategy, output formats, milestones, acceptance criteria.
-- LOG.md: Only verified outcomes from executed commands (no speculation), with timestamps and next steps.
+- **guidelines.txt**: Project state, goals, and file structure.
+- **AGENTS.md** (this file): How we work. Mission, rules, cycle, standards.
+- **requirements.txt**: Pip-style list of Python package dependencies.
+- **LOG.md**: Verified outcomes from executed commands.
 
 ## 11) Maintenance Checklist
-- Before proposing a change: Re-read guidelines and Rules.
+- Before proposing a change: Re-read **guidelines.txt** and **AGENTS.md**.
 - During proposal: Ensure the scope is one logical operation (either a single diff or an ACS); include exact commands for validation.
 - After validation: Update LOG.md with verified facts only (PASS/FAIL, command, salient output, interpretation).
 - When editing code: Ensure headers, imports ordering, docstrings, naming, and line length compliance.
-- When modifying controlled files (AGENTS.md, guidelines): Seek explicit approval first.
+- When modifying controlled files (AGENTS.md, guidelines.txt): Seek explicit approval first.
 
 ## 12) Compliance Reminder
 - This guide is enforceable. If a violation occurs (e.g., bundling changes, missing tests), the next cycle must include an explicit correction plan and a LOG.md entry documenting the verified issue and the fix.
