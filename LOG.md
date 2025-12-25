@@ -1,9 +1,11 @@
 # Project Log: Hangman
 
 # Arrangement is: oldest log on top; newest log, on the bottom.
+Example 
+## [LOG - xxx] yyyy-mm-dd: title
 
 ---
-## 2025-11-22-001: Fix Failing UI Test for Win/Loss Handling
+## [LOG - 000] 2025-11-22: Fix Failing UI Test for Win/Loss Handling
 
 - **Action:** Ran the `hangmanTests/test_uiTkinter.py` test suite.
 - **Result:** `FAIL`. 7 of 8 tests passed.
@@ -20,7 +22,7 @@
 - **Next Step:** Apply the patch and re-run the test suite to confirm the fix.
 
 ---
-## 2025-11-22-002: Headless Tk Initialization Regression
+## [LOG - 001] 2025-11-22: Headless Tk Initialization Regression
 
 - **Action:** Ran `pytest hangmanTests/test_uiTkinter.py` after refactoring the headless test setup.
 - **Result:** `FAIL`. All 8 tests errored.
@@ -32,7 +34,7 @@
 - **Next Step:** Mock `Tk.__init__` with a helper that seeds `self.tk`, `self._w`, and related attributes before instantiating `HangmanApp` in tests, then rerun the suite.
 
 ---
-## 2025-11-22-003: Tk Fake Init Signature Error
+## [LOG - 002] 2025-11-22: Tk Fake Init Signature Error
 
 - **Action:** Re-ran `pytest hangmanTests/test_uiTkinter.py` after stubbing Tk attributes in tests.
 - **Result:** `FAIL`. All 8 tests errored.
@@ -44,7 +46,7 @@
 - **Next Step:** Swap the patch to use `new=_fake_tk_init`, rerun the tests.
 
 ---
-## 2025-11-22-004: Headless GUI Tests Passing
+## [LOG - 003] 2025-11-22: Headless GUI Tests Passing
 
 - **Action:** Ran `pytest hangmanTests/test_uiTkinter.py` after updating the Tk initializer patching strategy.
 - **Result:** `PASS`. All 8 tests succeeded.
@@ -57,7 +59,7 @@
 - **Next Step:** Clean up outdated comments in the test module to reflect the new setup approach.
 
 --- 
-## 2025-11-22-006: CLI Win/Loss Message Test Passing
+## [LOG - 004] 2025-11-22: CLI Win/Loss Message Test Passing
 
 - **Action:** Ran `pytest hangmanTests\test_ioCli.py` after fixing the print statement formatting.
 - **Result:** `PASS`. All 2 tests succeeded.
@@ -70,7 +72,7 @@
 - **Next Step:** Standardize test suites by migrating `test_ioCli.py` from `unittest` to `pytest`.
 
 ---
-## 2025-11-22-005: Pytest HangmanApp GUI Coverage Expansion
+## [LOG - 005] 2025-11-22: Pytest HangmanApp GUI Coverage Expansion
 
 - **Action:** Replaced unittest-based suite with pytest fixtures using headless Tk mocks and reran `pytest hangmanTests/test_uiTkinter.py`.
 - **Result:** `PASS`. 13 tests succeeded.
@@ -84,7 +86,7 @@
 - **Next Step:** Monitor coverage to ensure all HangmanApp branches remain exercised.
 
 ---
-## 2025-12-24-001: Fix Headless Tkinter Tests
+## [LOG - 006] 2025-12-24: Fix Headless Tkinter Tests
 
 - **Action:** Created `hangmanTests/conftest.py` to mock `tkinter` in `sys.modules` and updated `uiTkinter.py` to accept `**kwargs`.
 - **Result:** `FAIL`. 31 passed, 1 failed.
@@ -98,7 +100,7 @@
 - **Next Step:** Fix the failing test in `test_uiTkinter.py`.
 
 ---
-## 2025-12-24-002: Resolve Mocking Issues in Headless Tests
+## [LOG - 007] 2025-12-24: Resolve Mocking Issues in Headless Tests
 
 - **Action:** Updated `hangmanTests/test_uiTkinter.py` to set `ns.categoryVar.get.return_value = "animals"`.
 - **Result:** `PASS`. All 32 tests passed.
@@ -112,7 +114,7 @@
 - **Next Step:** Proceed with any further migration or feature tasks, now that the test suite is stable and passing in the headless environment.
 
 ---
-## 2025-12-24-003: Create pyproject.toml
+## [LOG - 008] 2025-12-24: Create pyproject.toml
 
 - **Action:** Created `pyproject.toml` based on `requirements.txt` and existing `pytest.ini` settings.
 - **Result:** `PASS`. All 32 tests passed.
@@ -124,3 +126,74 @@
   ```
 - **Analysis:** `pyproject.toml` was successfully created with build system requirements, project metadata, and test dependencies. The test run confirmed that the new file does not interfere with the existing test setup (though `pytest.ini` currently takes precedence for configuration).
 - **Next Step:** Consider removing `pytest.ini` in a future step to consolidate configuration into `pyproject.toml`.
+
+---
+## [LOG - 009] 2025-12-25: Implement Visual Hangman and Virtual Keyboard
+
+- **Action:** Updated `uiTkinter.py` to include a `tk.Canvas` for drawing the hangman and a virtual keyboard for input. Updated `hangmanTests/test_uiTkinter.py` and `hangmanTests/conftest.py` to support these changes.
+- **Result:** `PASS`. All 37 tests passed.
+- **Salient Output:**
+  ```
+  hangmanTests\test_uiTkinter.py ............                                           [ 86%]
+  ==================================== 37 passed in 0.37s ====================================
+  ```
+- **Analysis:** The new UI features (Canvas and Virtual Keyboard) were successfully implemented and tested. The tests verify that the canvas is updated with the correct body parts and that the virtual keyboard buttons are disabled after use. The physical keyboard binding also works as expected.
+- **Next Step:** Remove `pytest.ini` as it is now redundant with `pyproject.toml`.
+
+---
+## [LOG - 010] 2025-12-25: Implement Hint System and Expand Word Bank
+
+- **Action:** Updated `gameLogic.py` to add `useHint()` method. Updated `wordBank.py` with new categories and words. Updated `uiTkinter.py` to add a Hint button. Updated tests to cover new features.
+- **Result:** `PASS`. All 44 tests passed.
+- **Salient Output:**
+  ```
+  hangmanTests\test_gameLogic.py ................                                       [ 36%]
+  hangmanTests\test_ioCli.py ....                                                       [ 45%]
+  hangmanTests\test_main.py ...                                                         [ 52%]
+  hangmanTests\test_uiTkinter.py ................                                       [ 88%]
+  hangmanTests\test_wordBank.py .....                                                   [100%]
+  ==================================== 44 passed in 0.61s ====================================
+  ```
+- **Analysis:** The Hint System and Expanded Word Bank were successfully implemented and verified. The tests confirm that hints cost lives, reveal letters correctly, and are disabled when appropriate. The new categories are also available and functional.
+- **Next Step:** Project is feature complete for this milestone.
+
+---
+## [LOG - 011] 2025-12-25: Futuristic Hangman Upgrade (Neo-Hangman)
+
+- **Action:** Applied a major "Futuristic" overhaul to `uiTkinter.py` (neon colors, cyberpunk theme, new labels) and updated `gameLogic.py` to always auto-reveal RSTLNE letters. Updated tests to match the new logic and UI structure.
+- **Result:** `PASS`. All 46 tests passed.
+- **Salient Output:**
+  ```
+  hangmanTests\test_gameLogic.py ..................                                     [ 39%]
+  hangmanTests\test_uiTkinter.py ................                                       [ 89%]
+  ==================================== 46 passed in 0.58s ====================================
+  ```
+- **Analysis:** The "Neo-Hangman" upgrade was successfully integrated.
+  - **Logic:** `HangmanGame` now correctly initializes with all RSTLNE letters in `used_letters`, preventing accidental guesses and penalties. Tests confirm this behavior (`testAutoRevealNone` now expects 6 used letters).
+  - **UI:** The Tkinter interface now features a dark theme, neon accents, and a "Neural Bonus" label. The test fixture `hangmanApp` was updated to mock the new `bonus_label`, resolving `StopIteration` errors.
+  - **Tests:** All tests, including those for the new UI elements and logic changes, are passing.
+- **Next Step:** Launch the game via `python main.py` to enjoy the future!
+
+---
+## [LOG - 012] 2025-12-25: Improve Test Coverage for uiTkinter
+
+- **Action:** Added new tests to `hangmanTests/test_uiTkinter.py` to cover previously untested code paths identified by a coverage report.
+- **Result:** `PASS`. All 49 tests passed.
+- **Salient Output:**
+  ```
+  ==================================== 49 passed in 0.65s ====================================
+  ```
+- **Analysis:** The new tests successfully cover the `_onResetButtonClicked` function and various defensive `if self.game is None:` checks, increasing the overall test coverage and robustness of the `uiTkinter` module. A failure in `testDefensiveChecksForNoneGame` was fixed by resetting mock call counts to ignore setup-phase calls.
+- **Next Step:** The project is now more thoroughly tested. Ready for the next task.
+
+---
+## [LOG - 013] 2025-12-25: Fix Keyboard Layout and Test Suite
+
+- **Action:** Modified the keyboard layout in `uiTkinter.py` from a 2x13 grid to a 3-row QWERTY layout to fix a visual overflow issue. Updated the `hangmanApp` test fixture in `test_uiTkinter.py` to accommodate the new layout.
+- **Result:** `PASS`. All 49 tests passed.
+- **Salient Output:**
+  ```
+  ==================================== 49 passed in 0.76s ====================================
+  ```
+- **Analysis:** The UI overflow was resolved by changing the keyboard to a 3-row layout. This change broke the test suite because the `hangmanApp` fixture's mock for `tk.Frame` had a hardcoded number of side effects. The fixture was updated to use a `side_effect` function, making it robust to changes in the number of frames. All tests now pass.
+- **Next Step:** The keyboard is now fully visible and the test suite is stable. Ready for the next task.

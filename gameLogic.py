@@ -9,15 +9,18 @@ rules of a single round of Hangman. It tracks the secret word, guessed letters,
 and win/loss conditions.
 
 Author: @seanl
-Version: 1.0.0
+Version: 1.3.0
 Creation Date: 11/20/2025
-Last Updated: 11/20/2025
+Last Updated: 12/25/2025
 """
 
-from typing import Set
+from typing import Set, Optional
+import random
 
 
 DEFAULT_MAX_ATTEMPTS: int = 6
+HINT_COST: int = 2
+AUTO_REVEAL_LETTERS: Set[str] = {'r', 's', 't', 'l', 'n', 'e'}
 
 
 class HangmanGame:
@@ -30,6 +33,7 @@ class HangmanGame:
         self.max_attempts: int = max_attempts
         self.used_letters: Set[str] = set()
         self.wrong_guesses: int = 0
+        self._autoRevealCommonLetters()
 
     def resetGame(self, new_secret_word: str) -> None:
         """
@@ -38,6 +42,15 @@ class HangmanGame:
         self.secret_word = new_secret_word.lower()
         self.used_letters.clear()
         self.wrong_guesses = 0
+        self._autoRevealCommonLetters()
+
+    def _autoRevealCommonLetters(self) -> None:
+        """
+        Automatically provide RSTLNE as 'used' letters (Futuristic Neural Bonus!).
+        Reveals where present, disables buttons/ignores guesses always (no accidental penalties).
+        """
+        for letter in AUTO_REVEAL_LETTERS:
+            self.used_letters.add(letter)
 
     def getMaskedWord(self) -> str:
         """
@@ -74,6 +87,40 @@ class HangmanGame:
             return False
 
         return True
+
+    def useHint(self) -> Optional[str]:
+        """
+        Reveal a random un-guessed letter from the secret word.
+        Cost: 2 wrong guesses (HINT_COST).
+
+        Returns:
+            The revealed letter if successful, None if not enough attempts remaining
+            or no letters left to reveal.
+        """
+        remaining_attempts = self.max_attempts - self.wrong_guesses
+        
+        if remaining_attempts < HINT_COST:
+            return None
+
+        # Find un-guessed letters in the secret word
+        unguessed = [
+            char for char in self.secret_word
+            if char not in self.used_letters and char.isalpha()
+        ]
+
+        if not unguessed:
+            return None
+
+        # Pick one
+        letter_to_reveal = random.choice(unguessed)
+        
+        # Add to used letters (it's a correct guess effectively)
+        self.used_letters.add(letter_to_reveal)
+        
+        # Apply penalty
+        self.wrong_guesses += HINT_COST
+        
+        return letter_to_reveal
 
     def isWon(self) -> bool:
         """

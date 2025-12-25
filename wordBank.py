@@ -9,9 +9,9 @@ word lists used in the Hangman game. It allows for words to be organized into
 categories, and provides methods to retrieve categories and select random words.
 
 Author: @seanl
-Version: 1.0.0
+Version: 1.1.0
 Creation Date: 11/20/2025
-Last Updated: 11/20/2025
+Last Updated: 12/25/2025
 """
 
 from typing import Dict, List
@@ -35,9 +35,12 @@ class WordBank:
         Extend this with more categories and words as needed.
         """
         self.categories = {
-            "general": ["python", "hangman", "developer", "keyboard"],
-            "animals": ["elephant", "giraffe", "kangaroo", "alligator"],
-            "fruits": ["banana", "strawberry", "pineapple", "watermelon"],
+            "general": ["python", "hangman", "developer", "keyboard", "algorithm", "variable"],
+            "animals": ["elephant", "giraffe", "kangaroo", "alligator", "platypus", "rhinoceros"],
+            "fruits": ["banana", "strawberry", "pineapple", "watermelon", "blueberry", "pomegranate"],
+            "movies": ["inception", "gladiator", "titanic", "avatar", "matrix", "godfather"],
+            "countries": ["australia", "brazil", "canada", "denmark", "egypt", "france"],
+            "science": ["physics", "chemistry", "biology", "astronomy", "quantum", "gravity"],
         }
 
     def getCategories(self) -> List[str]:

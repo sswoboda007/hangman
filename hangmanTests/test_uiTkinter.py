@@ -9,7 +9,7 @@ It uses extensive mocking to isolate the GUI logic from the Tkinter framework,
 allowing tests to run in a headless environment without a display.
 
 Author: @seanl
-Version: 2.2.0
+Version: 2.9.0
 Creation Date: 11/21/2025
 Last Updated: 12/25/2025
 """
@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch, call
 
 import pytest
 
-from gameLogic import HangmanGame
+from gameLogic import HangmanGame, HINT_COST
 from uiTkinter import DEFAULT_CATEGORY, HangmanApp
 from wordBank import WordBank
 
@@ -32,7 +32,6 @@ def hangmanApp():
         # Since tkinter is mocked in conftest.py, we don't need to patch Tk.__init__
         # to prevent the GUI from launching. The global mock handles it.
         
-        # Remove autospec=True because these are now mocking Mocks (due to conftest.py)
         mock_messagebox = stack.enter_context(patch('uiTkinter.messagebox'))
 
         mock_option_menu = stack.enter_context(patch('tkinter.OptionMenu'))
@@ -42,33 +41,30 @@ def hangmanApp():
         category_var = MagicMock(name="StringVar")
         mock_string_var.return_value = category_var
 
+        # Mock Button creation. We need to capture the buttons created for the keyboard.
         mock_button = stack.enter_context(patch('tkinter.Button'))
-        guess_button = MagicMock(name="GuessButton")
-        guess_button.config = MagicMock(name="GuessButton.config")
-        reset_button = MagicMock(name="ResetButton")
-        reset_button.config = MagicMock(name="ResetButton.config")
-        mock_button.side_effect = [guess_button, reset_button]
-
-        mock_entry = stack.enter_context(patch('tkinter.Entry'))
-        input_entry = MagicMock(name="Entry")
-        input_entry.config = MagicMock(name="Entry.config")
-        input_entry.get = MagicMock(name="Entry.get", return_value="")
-        input_entry.delete = MagicMock(name="Entry.delete")
-        mock_entry.return_value = input_entry
+        
+        # We'll use a side_effect to return distinct mocks for each button creation
+        def button_side_effect(*args, **kwargs):
+            btn = MagicMock(name="Button")
+            btn.config = MagicMock(name="Button.config")
+            return btn
+        
+        mock_button.side_effect = button_side_effect
 
         mock_label = stack.enter_context(patch('tkinter.Label'))
         category_label = MagicMock(name="CategoryLabel")
+        bonus_label = MagicMock(name="BonusLabel") # Added for futuristic UI
         word_label = MagicMock(name="WordLabel")
         info_label = MagicMock(name="InfoLabel")
-        input_label = MagicMock(name="InputLabel")
-        mock_label.side_effect = [category_label, word_label, info_label, input_label]
+        # Updated side_effect to include bonus_label
+        mock_label.side_effect = [category_label, bonus_label, word_label, info_label]
 
         mock_frame = stack.enter_context(patch('tkinter.Frame'))
-        mock_frame.side_effect = [
-            MagicMock(name="MainFrame"),
-            MagicMock(name="CategoryFrame"),
-            MagicMock(name="InputFrame"),
-        ]
+        # Use a side_effect function for robust frame mocking
+        def frame_side_effect(*args, **kwargs):
+            return MagicMock(name="Frame")
+        mock_frame.side_effect = frame_side_effect
 
         mock_canvas = stack.enter_context(patch('tkinter.Canvas'))
         canvas = MagicMock(name="Canvas")
@@ -78,15 +74,18 @@ def hangmanApp():
         word_bank.getRandomWord.return_value = "test"
         word_bank.getCategories.return_value = ["general", "animals"]
 
+        # Note: "test" contains 't', 'e', 's' which are all in RSTLNE.
+        # So used_letters will be populated on init.
         game_instance = HangmanGame("test", max_attempts=6)
         game_instance.isWon = MagicMock(return_value=False)
         game_instance.isLost = MagicMock(return_value=False)
         game_instance.processGuess = MagicMock(name="processGuess")
+        game_instance.useHint = MagicMock(name="useHint")
+        game_instance.isFinished = MagicMock(return_value=False)
 
         app = HangmanApp(word_bank=word_bank, game_factory=lambda word: game_instance)
         
         # Manually inject attributes that might be expected by Tkinter internals or app code
-        # if they were previously set by the fakeTkInit
         app.tk = MagicMock(name="tk")
         app.tk.call = MagicMock(name="tk.call")
         app._w = "mocked_tk"
@@ -100,10 +99,10 @@ def hangmanApp():
             categoryVar=category_var,
             wordLabel=word_label,
             infoLabel=info_label,
-            inputEntry=input_entry,
-            guessButton=guess_button,
-            resetButton=reset_button,
+            resetButton=app.reset_button,
+            hintButton=app.hint_button,
             canvas=canvas,
+            mockButton=mock_button
         )
 
 
@@ -111,8 +110,12 @@ def testInitSetsUpGameAndWidgets(hangmanApp) -> None:
     ns = hangmanApp
     ns.wordBank.getRandomWord.assert_called_with(DEFAULT_CATEGORY)
     assert ns.app.game is ns.gameInstance
-    ns.inputEntry.config.assert_called_with(state=tk.NORMAL)
-    ns.guessButton.config.assert_called_with(state=tk.NORMAL)
+    
+    # Verify 26 letter buttons + hint + reset
+    assert len(ns.app.letter_buttons) == 26
+    assert ns.app.hint_button is not None
+    assert ns.app.reset_button is not None
+    
     # Verify canvas creation
     assert ns.app.canvas is ns.canvas
 
@@ -122,9 +125,8 @@ def testStartNewGameRefreshesUiState(hangmanApp) -> None:
     ns.wordBank.getRandomWord.reset_mock()
     ns.wordLabel.config.reset_mock()
     ns.infoLabel.config.reset_mock()
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
     ns.canvas.delete.reset_mock()
+    ns.hintButton.config.reset_mock()
 
     ns.app.current_category = "animals"
     ns.wordBank.getRandomWord.return_value = "kangaroo"
@@ -132,34 +134,19 @@ def testStartNewGameRefreshesUiState(hangmanApp) -> None:
     ns.app._startNewGame()
 
     ns.wordBank.getRandomWord.assert_called_once_with("animals")
-    assert ns.wordLabel.config.call_count == 1
+    assert ns.wordLabel.config.call_count >= 1
     assert ns.infoLabel.config.call_count == 1
-    ns.inputEntry.config.assert_called_with(state=tk.NORMAL)
-    ns.guessButton.config.assert_called_with(state=tk.NORMAL)
     ns.canvas.delete.assert_called_with("all")
+    ns.hintButton.config.assert_called_with(state=tk.NORMAL)
 
 
 def testOnCategoryChangedUpdatesStateAndRestarts(hangmanApp) -> None:
     ns = hangmanApp
-    # Configure the mock StringVar to return the expected category
     ns.categoryVar.get.return_value = "animals"
 
     with patch.object(ns.app, '_startNewGame') as mock_start:
         ns.app._onCategoryChanged("animals")
         assert ns.app.current_category == "animals"
-        mock_start.assert_called_once_with()
-
-
-def testOnCategoryChangedHandlesNoneVar(hangmanApp) -> None:
-    """
-    Test defensive check: _onCategoryChanged should handle case where category_var is None.
-    """
-    ns = hangmanApp
-    ns.app.category_var = None
-    
-    with patch.object(ns.app, '_startNewGame') as mock_start:
-        ns.app._onCategoryChanged("fruits")
-        assert ns.app.current_category == "fruits"
         mock_start.assert_called_once_with()
 
 
@@ -172,252 +159,105 @@ def testUpdateLabelsRefreshesWordAndInfo(hangmanApp) -> None:
         ns.app._updateInfoLabel()
 
     assert ns.wordLabel.config.call_args_list[-1] == call(text="t _ _ t")
-    assert ns.infoLabel.config.call_args_list[-1] == call(
-        text="Used letters: t | Remaining attempts: 6"
-    )
+    # Updated for futuristic UI text
+    assert "Lives: 6/6" in ns.infoLabel.config.call_args_list[-1][1]['text']
 
 
-def testUpdateInfoLabelReturnsIfComponentsNone(hangmanApp) -> None:
-    """
-    Test defensive check: _updateInfoLabel should return early if game or label is None.
-    """
+def testOnGuessHandlesInputAndUpdatesUi(hangmanApp) -> None:
     ns = hangmanApp
-    
-    # Case 1: game is None
-    ns.app.game = None
-    ns.infoLabel.config.reset_mock()
-    ns.app._updateInfoLabel()
-    ns.infoLabel.config.assert_not_called()
-
-    # Restore game, set label to None
-    ns.app.game = ns.gameInstance
-    ns.app.info_label = None
-    ns.app._updateInfoLabel()
-    # No crash expected
-    
-    # Restore label for other tests if needed (though fixture resets)
-    ns.app.info_label = ns.infoLabel
-
-
-def testProcessCurrentGuessHandlesInputAndUpdatesUi(hangmanApp) -> None:
-    ns = hangmanApp
-    ns.inputEntry.get.return_value = "E"
     ns.gameInstance.processGuess.reset_mock()
 
     with patch.object(ns.app, '_updateWordLabel') as mock_update_word, \
          patch.object(ns.app, '_updateInfoLabel') as mock_update_info, \
-         patch.object(ns.app, '_updateCanvas') as mock_update_canvas:
-        ns.app._processCurrentGuess()
+         patch.object(ns.app, '_updateCanvas') as mock_update_canvas, \
+         patch.object(ns.app, '_updateButtons') as mock_update_buttons, \
+         patch.object(ns.app, '_updateHintButton') as mock_update_hint:
+        
+        # Use 'Z' because 'E' is in RSTLNE and is auto-revealed in "test"
+        ns.app._onGuess("Z")
 
-    ns.gameInstance.processGuess.assert_called_once_with("E")
-    ns.inputEntry.delete.assert_called_once_with(0, tk.END)
+    ns.gameInstance.processGuess.assert_called_once_with("Z")
     mock_update_word.assert_called_once_with()
     mock_update_info.assert_called_once_with()
     mock_update_canvas.assert_called_once_with()
+    mock_update_buttons.assert_called_once_with()
+    mock_update_hint.assert_called_once_with()
 
 
-def testProcessCurrentGuessIgnoresEmptyInput(hangmanApp) -> None:
+def testOnGuessIgnoresUsedLetters(hangmanApp) -> None:
     ns = hangmanApp
-    ns.inputEntry.get.return_value = "   "
+    ns.gameInstance.used_letters = {"z"}
     ns.gameInstance.processGuess.reset_mock()
-    ns.inputEntry.delete.reset_mock()
 
-    ns.app._processCurrentGuess()
+    ns.app._onGuess("Z")
 
-    ns.inputEntry.delete.assert_called_once_with(0, tk.END)
     ns.gameInstance.processGuess.assert_not_called()
 
 
-def testProcessCurrentGuessReturnsIfComponentsNone(hangmanApp) -> None:
-    """
-    Test defensive check: _processCurrentGuess should return early if game or entry is None.
-    """
+def testOnGuessIgnoresFinishedGame(hangmanApp) -> None:
     ns = hangmanApp
-    
-    # Case 1: game is None
-    ns.app.game = None
-    ns.inputEntry.get.reset_mock()
-    ns.app._processCurrentGuess()
-    ns.inputEntry.get.assert_not_called()
+    ns.gameInstance.isFinished.return_value = True
+    ns.gameInstance.processGuess.reset_mock()
 
-    # Restore game, set entry to None
-    ns.app.game = ns.gameInstance
-    ns.app.input_entry = None
-    ns.app._processCurrentGuess()
-    # No crash expected
+    ns.app._onGuess("A")
+
+    ns.gameInstance.processGuess.assert_not_called()
 
 
-def testProcessCurrentGuessHandlesWinAndLoss(hangmanApp) -> None:
+def testOnGuessHandlesWinAndLoss(hangmanApp) -> None:
     ns = hangmanApp
-    ns.inputEntry.get.return_value = "a"
     ns.messagebox.showinfo.reset_mock()
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
-
+    
+    # Test Win
     ns.gameInstance.isWon.return_value = True
     ns.gameInstance.isLost.return_value = False
-    ns.app._processCurrentGuess()
+    # Use 'A' (not in RSTLNE)
+    ns.app._onGuess("A")
 
-    ns.messagebox.showinfo.assert_called_with("Hangman", "You won! The word was: test")
-    ns.inputEntry.config.assert_called_with(state=tk.DISABLED)
-    ns.guessButton.config.assert_called_with(state=tk.DISABLED)
+    # Updated for futuristic UI text
+    args, _ = ns.messagebox.showinfo.call_args
+    assert "Neural Victory!" in args[0]
+    ns.app.letter_buttons['A'].config.assert_called_with(state=tk.DISABLED)
+    ns.wordLabel.config.assert_called_with(fg="#00ff41")
 
+    # Reset for Loss test
     ns.messagebox.showinfo.reset_mock()
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
-
     ns.gameInstance.isWon.return_value = False
     ns.gameInstance.isLost.return_value = True
-    ns.app._processCurrentGuess()
-
-    ns.messagebox.showinfo.assert_called_with("Hangman", "You lost! The word was: test")
-    ns.inputEntry.config.assert_called_with(state=tk.DISABLED)
-    ns.guessButton.config.assert_called_with(state=tk.DISABLED)
-
-
-def testHandleWinHandlesNoneGame(hangmanApp) -> None:
-    """
-    Test defensive check: _handleWin should not crash if game is None.
-    """
-    ns = hangmanApp
-    ns.app.game = None
-    ns.messagebox.showinfo.reset_mock()
     
-    ns.app._handleWin()
+    # Use 'B' (not in RSTLNE)
+    ns.app._onGuess("B")
+
+    # Updated for futuristic UI text
+    args, _ = ns.messagebox.showinfo.call_args
+    assert "System Breach!" in args[0]
+    ns.app.letter_buttons['B'].config.assert_called_with(state=tk.DISABLED)
+
+
+def testUpdateButtonsDisablesUsedLetters(hangmanApp) -> None:
+    ns = hangmanApp
+    ns.gameInstance.used_letters = {"a", "z"}
     
-    ns.messagebox.showinfo.assert_not_called()
+    ns.app._updateButtons()
+    
+    ns.app.letter_buttons['A'].config.assert_called_with(state=tk.DISABLED, bg="#333333", fg="#666")
+    ns.app.letter_buttons['Z'].config.assert_called_with(state=tk.DISABLED, bg="#333333", fg="#666")
+    ns.app.letter_buttons['B'].config.assert_called_with(state=tk.NORMAL, bg="#16213e", fg="#00ffff")
 
 
-def testHandleLossHandlesNoneGame(hangmanApp) -> None:
+def testPhysicalKeyBinding(hangmanApp) -> None:
+    ns = hangmanApp
+    event = MagicMock()
+    event.char = "k"
+    
+    with patch.object(ns.app, '_onGuess') as mock_guess:
+        ns.app._onPhysicalKey(event)
+        mock_guess.assert_called_once_with("K")
+
+
+def testUpdateCanvasDrawsAllBodyParts(hangmanApp) -> None:
     """
-    Test defensive check: _handleLoss should not crash if game is None.
-    """
-    ns = hangmanApp
-    ns.app.game = None
-    ns.messagebox.showinfo.reset_mock()
-    
-    ns.app._handleLoss()
-    
-    ns.messagebox.showinfo.assert_not_called()
-
-
-def testOnGuessSubmitDelegatesToProcess(hangmanApp) -> None:
-    ns = hangmanApp
-    with patch.object(ns.app, '_processCurrentGuess') as mock_process:
-        ns.app._onGuessSubmit(event=None)
-        mock_process.assert_called_once_with()
-
-
-def testOnGuessButtonClickedDelegatesToProcess(hangmanApp) -> None:
-    ns = hangmanApp
-    with patch.object(ns.app, '_processCurrentGuess') as mock_process:
-        ns.app._onGuessButtonClicked()
-        mock_process.assert_called_once_with()
-
-
-def testDisableAndEnableInputToggleWidgets(hangmanApp) -> None:
-    ns = hangmanApp
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
-
-    ns.app._disableInput()
-    ns.inputEntry.config.assert_called_with(state=tk.DISABLED)
-    ns.guessButton.config.assert_called_with(state=tk.DISABLED)
-
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
-
-    ns.app._enableInput()
-    ns.inputEntry.config.assert_called_with(state=tk.NORMAL)
-    ns.guessButton.config.assert_called_with(state=tk.NORMAL)
-
-
-def testHandleWinShowsMessageAndDisablesInput(hangmanApp) -> None:
-    ns = hangmanApp
-    ns.messagebox.showinfo.reset_mock()
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
-
-    ns.app._handleWin()
-
-    ns.messagebox.showinfo.assert_called_with("Hangman", "You won! The word was: test")
-    ns.inputEntry.config.assert_called_with(state=tk.DISABLED)
-    ns.guessButton.config.assert_called_with(state=tk.DISABLED)
-
-
-def testHandleLossShowsMessageAndDisablesInput(hangmanApp) -> None:
-    ns = hangmanApp
-    ns.messagebox.showinfo.reset_mock()
-    ns.inputEntry.config.reset_mock()
-    ns.guessButton.config.reset_mock()
-
-    ns.app._handleLoss()
-
-    ns.messagebox.showinfo.assert_called_with("Hangman", "You lost! The word was: test")
-    ns.inputEntry.config.assert_called_with(state=tk.DISABLED)
-    ns.guessButton.config.assert_called_with(state=tk.DISABLED)
-
-
-def testOnResetButtonClickedStartsNewGame(hangmanApp) -> None:
-    ns = hangmanApp
-    with patch.object(ns.app, '_startNewGame') as mock_start:
-        ns.app._onResetButtonClicked()
-        mock_start.assert_called_once_with()
-
-def testUpdateWordLabelHandlesNone(hangmanApp) -> None:
-    """
-    Test defensive check: _updateWordLabel should not crash if game or label is None.
-    """
-    ns = hangmanApp
-    
-    # Case 1: game is None
-    ns.app.game = None
-    ns.wordLabel.config.reset_mock()
-    ns.app._updateWordLabel()
-    ns.wordLabel.config.assert_not_called()
-    
-    # Case 2: label is None
-    ns.app.game = ns.gameInstance
-    ns.app.word_label = None
-    ns.app._updateWordLabel()
-    # No crash expected
-    
-    # Restore label
-    ns.app.word_label = ns.wordLabel
-
-def testDisableInputHandlesNoneWidgets(hangmanApp) -> None:
-    """
-    Test defensive check: _disableInput should not crash if widgets are None.
-    """
-    ns = hangmanApp
-    ns.app.input_entry = None
-    ns.app.guess_button = None
-    
-    # Should not raise AttributeError
-    ns.app._disableInput()
-    
-    # Restore widgets
-    ns.app.input_entry = ns.inputEntry
-    ns.app.guess_button = ns.guessButton
-
-def testEnableInputHandlesNoneWidgets(hangmanApp) -> None:
-    """
-    Test defensive check: _enableInput should not crash if widgets are None.
-    """
-    ns = hangmanApp
-    ns.app.input_entry = None
-    ns.app.guess_button = None
-    
-    # Should not raise AttributeError
-    ns.app._enableInput()
-    
-    # Restore widgets
-    ns.app.input_entry = ns.inputEntry
-    ns.app.guess_button = ns.guessButton
-
-def testUpdateCanvasDrawsBodyParts(hangmanApp) -> None:
-    """
-    Test that _updateCanvas draws the correct body parts based on wrong guesses.
+    Test that _updateCanvas draws all body parts for 6 wrong guesses.
     """
     ns = hangmanApp
     ns.canvas.delete.reset_mock()
@@ -431,12 +271,11 @@ def testUpdateCanvasDrawsBodyParts(hangmanApp) -> None:
     # Should clear canvas
     ns.canvas.delete.assert_called_with("all")
 
-    # Should draw gallows (4 lines)
-    # Should draw head (1 oval)
-    # Should draw body, arms, legs (5 lines)
-    # Total lines = 4 (gallows) + 5 (body parts) = 9
+    # Gallows (4 lines) + Head (2 ovals) + Body (1 line) + 4 Limbs (4 lines) = 9 lines
     assert ns.canvas.create_line.call_count == 9
-    assert ns.canvas.create_oval.call_count == 1
+    assert ns.canvas.create_oval.call_count == 2
+    assert ns.canvas.create_oval.called
+
 
 def testUpdateCanvasHandlesNone(hangmanApp) -> None:
     """
@@ -458,3 +297,104 @@ def testUpdateCanvasHandlesNone(hangmanApp) -> None:
     
     # Restore canvas
     ns.app.canvas = ns.canvas
+
+def testHintButtonCallsUseHint(hangmanApp) -> None:
+    """
+    Test that clicking the hint button calls game.useHint().
+    """
+    ns = hangmanApp
+    ns.gameInstance.useHint.return_value = "e"
+    
+    with patch.object(ns.app, '_refreshUiAfterAction') as mock_refresh:
+        ns.app._onHintButtonClicked()
+        
+        ns.gameInstance.useHint.assert_called_once()
+        # Updated for futuristic UI text
+        args, _ = ns.messagebox.showinfo.call_args
+        assert "Neural Hint" in args[0]
+        mock_refresh.assert_called_once()
+
+def testHintButtonShowsWarningIfFailed(hangmanApp) -> None:
+    """
+    Test that hint button shows warning if useHint returns None.
+    """
+    ns = hangmanApp
+    ns.gameInstance.useHint.return_value = None
+    
+    ns.app._onHintButtonClicked()
+    
+    # Updated for futuristic UI text
+    args, _ = ns.messagebox.showwarning.call_args
+    assert "Neural Hint Unavailable" in args[0]
+
+def testUpdateHintButtonDisablesIfLowLives(hangmanApp) -> None:
+    """
+    Test that hint button is disabled if remaining attempts < HINT_COST.
+    """
+    ns = hangmanApp
+    # Max 6, wrong 5 -> 1 remaining. Cost is 2. Should disable.
+    ns.gameInstance.max_attempts = 6
+    ns.gameInstance.wrong_guesses = 5
+    
+    ns.app._updateHintButton()
+    
+    ns.hintButton.config.assert_called_with(state=tk.DISABLED)
+
+def testUpdateHintButtonEnablesIfEnoughLives(hangmanApp) -> None:
+    """
+    Test that hint button is enabled if remaining attempts >= HINT_COST.
+    """
+    ns = hangmanApp
+    # Max 6, wrong 0 -> 6 remaining. Cost is 2. Should enable.
+    ns.gameInstance.max_attempts = 6
+    ns.gameInstance.wrong_guesses = 0
+    
+    ns.app._updateHintButton()
+    
+    ns.hintButton.config.assert_called_with(state=tk.NORMAL)
+
+def testOnResetButtonClicked(hangmanApp) -> None:
+    """
+    Test that clicking the reset button calls _startNewGame.
+    """
+    ns = hangmanApp
+    with patch.object(ns.app, '_startNewGame') as mock_start:
+        ns.app._onResetButtonClicked()
+        mock_start.assert_called_once()
+
+def testDefensiveChecksForNoneGame(hangmanApp) -> None:
+    """
+    Test that methods with `if self.game is None: return` are covered.
+    """
+    ns = hangmanApp
+    
+    # Reset mocks to clear any calls from fixture setup
+    ns.infoLabel.config.reset_mock()
+    ns.gameInstance.processGuess.reset_mock()
+    ns.gameInstance.useHint.reset_mock()
+
+    ns.app.game = None
+    
+    # These methods should not raise an error
+    ns.app._updateInfoLabel()
+    ns.app._onGuess("A")
+    ns.app._onHintButtonClicked()
+    ns.app._refreshUiAfterAction()
+    ns.app._updateButtons()
+    ns.app._updateHintButton()
+    
+    # Verify no downstream calls were made
+    ns.infoLabel.config.assert_not_called()
+    ns.gameInstance.processGuess.assert_not_called()
+    ns.gameInstance.useHint.assert_not_called()
+    
+def testOnCategoryChangedWithStrArgument(hangmanApp) -> None:
+    """
+    Test _onCategoryChanged when the argument is a plain string.
+    """
+    ns = hangmanApp
+    ns.app.category_var = None # Simulate case where it's not set
+    with patch.object(ns.app, '_startNewGame') as mock_start:
+        ns.app._onCategoryChanged("new_category")
+        assert ns.app.current_category == "new_category"
+        mock_start.assert_called_once()

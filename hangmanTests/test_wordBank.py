@@ -9,7 +9,7 @@ it correctly manages word categories, retrieves words, and provides random words
 for the game.
 
 Author: @seanl
-Version: 1.1.0
+Version: 1.2.0
 Creation Date: 11/20/2025
 Last Updated: 12/25/2025
 """
@@ -33,6 +33,8 @@ class TestWordBank(unittest.TestCase):
         """
         categories = self.word_bank.getCategories()
         self.assertIn(DEFAULT_CATEGORY, categories)
+        self.assertIn("movies", categories)
+        self.assertIn("science", categories)
 
     def testGetWordsForValidCategory(self) -> None:
         """
