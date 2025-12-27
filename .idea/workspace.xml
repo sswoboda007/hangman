@@ -7,10 +7,8 @@
     <list default="true" id="f18c9db2-1606-4a36-9686-faa3ff984228" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/LOG.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gameLogic.py" beforeDir="false" afterPath="$PROJECT_DIR$/gameLogic.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hangmanTests/test_gameLogic.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_gameLogic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/guidelines.txt" beforeDir="false" afterPath="$PROJECT_DIR$/guidelines.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/hangmanTests/test_uiTkinter.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_uiTkinter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hangmanTests/test_wordBank.py" beforeDir="false" afterPath="$PROJECT_DIR$/hangmanTests/test_wordBank.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/uiTkinter.py" beforeDir="false" afterPath="$PROJECT_DIR$/uiTkinter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/wordBank.py" beforeDir="false" afterPath="$PROJECT_DIR$/wordBank.py" afterDir="false" />
     </list>

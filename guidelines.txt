@@ -1,28 +1,90 @@
-1. Hangman (simple GUI)
-Concept: Classic word guessing game.
+1. QUANTUM HANGMAN - Futuristic GUI Game
+Concept: Modern, cyberpunk-themed word guessing game with neural interface aesthetics.
 
 Features / Files:
 
-- wordBank.py – provides word lists, categories.
-- gameLogic.py – handles guesses, tracking used letters, win/loss conditions.
-- ioCli.py or ui_tkinter.py – CLI or GUI handling.
-- main.py – wires everything together.
-- test_wordBank.py
-- test_gameLogic.py
-- test_ioCli.py
-- test_main.py
+- wordBank.py – provides 15 themed word categories with 150+ words (general, animals, fruits, movies, countries, science, winter 2025, minecraft, among us, fortnite, coding, space, superheroes, fantasy, ocean)
+- gameLogic.py – handles guesses, tracking used letters, win/loss conditions, hint system, auto-reveal of RSTLNE letters
+- uiTkinter.py – modern GUI with futuristic theme, cyan/purple/pink color scheme, quantum/neural interface design
+- ioCli.py – CLI interface for text-based gameplay
+- main.py – wires everything together, supports both GUI and CLI modes
+- hangmanTests/ – comprehensive test suite with 49 tests
+  - test_wordBank.py – word bank functionality
+  - test_gameLogic.py – game logic and rules
+  - test_uiTkinter.py – GUI interface testing
+  - test_ioCli.py – CLI interface testing
+  - test_main.py – main module wiring
+
+UI Features:
+- High-tech cyberpunk theme with black background and neon colors
+- Resizable window (720x1320 default, min 650x1200)
+- Fully visible 3-row virtual keyboard with modern styling
+- Animated hangman drawing with quantum/neural aesthetics
+- Score tracking and energy-based hint system
+- Category selection with themed word lists
+- Visual feedback for correct/incorrect guesses
 
 Good for tests:
-Verifying win/loss when last guess is used.
-Checking display of partially guessed words.
-Ensuring letters can’t be guessed twice.
-Testing random word selection with seeding.
+- Verifying win/loss when last guess is used
+- Checking display of partially guessed words
+- Ensuring letters can't be guessed twice
+- Testing random word selection with seeding
+- UI component interactions and state management
+- Theme consistency across all visual elements
 
+How to Run:
+python main.py              # run the futuristic GUI
+python main.py -c           # run the CLI
 
-python main.py      # run the GUI
-python main.py -c   # run the CLI
+Testing:
+python -m pytest hangmanTests/    # run all tests with pytest
+python -m pytest hangmanTests/test_uiTkinter.py -v  # run UI tests with verbose output
+python -m unittest discover hangmanTests  # alternative test runner
 
-python -m unittest discover hangmanTests
-python -m unittest  # run all tests
+Project Setup:
+- Python 3.12+ required
+- Uses tkinter for GUI (included with Python)
+- No external dependencies required
+- 100% test coverage with 49 passing tests
 
-winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements # install git (if not already installed)
+Recent Updates (Dec 2025):
+- Transformed from 90s aesthetic to 2026 futuristic design
+- Implemented high-tech cyberpunk theme with neon colors
+- Expanded word bank with modern gaming and seasonal themes
+- Fixed keyboard layout issues - all rows now visible
+- Made window resizable with proper minimum dimensions
+- Removed bonus matrix for cleaner interface
+- Updated all tests to match new UI design
+
+🎮 Planned Reward System Features:
+🏆 Neural Synapse Progression (NP System)
+- XP-based leveling with thematic ranks (Neural Initiate → Data Runner → Cipher Agent → Quantum Hacker → Neon Oracle → Singularity).
+- Earn "Neural Points" (NP): +10 (Win), +5 (Efficiency: <3 errors), +2 (Correct Letter), -2 (Loss).
+- Level Unlocks (1-10+): New categories (Fortnite at Lvl 3, Fantasy at Lvl 5), Neon schemes, and "Quantum Glitch" animations.
+- Perks: High-level players start with extra hints or additional auto-revealed letters.
+
+⚡ Daily Challenges & Quantum Surges
+- Daily Challenge: Specific goals (e.g., "Science category, no errors") for Double NP.
+- Weekly Streak: Play 5 days in a row for temporary boosts (e.g., extra guesses).
+- Quantum Surge: Random events or seasonal (Winter 2025) triple NP multipliers.
+
+🎨 Unlockable Cosmetics & Perks
+- Themes: Midnight Neon, Toxic Green, Sunset Protocol, Chrome Future.
+- Skins: Hologram, Neon Skeleton, Glitch, Golden Circuit.
+- Functional: Spend NP to "recharge" hint energy faster.
+
+🏅 Achievement & Badge System
+- "Quantum Survivor": Win 5 games in a row (+50 NP).
+- "Neon Decoder": Win without hints (Unlock "Elite" word list).
+- "Category Master": Complete all words in a category (Custom avatar/icon).
+- "Daily Hacker": Play daily for a week (Free hint refill).
+- Visual achievement gallery with progress tracking.
+
+💾 Persistent Neural Core (Save System)
+- JSON-based persistence (`neural_core.json`) tracking NP, levels, achievements, and streaks.
+- Integration: `gameLogic.py` for scoring, `uiTkinter.py` for progress bars and notifications.
+- Time-tracking via Python's `datetime` module for daily/weekly resets.
+
+🎰 Bonus Multiplier System
+- Score multipliers for: No wrong guesses (×2.0), No hints (×1.5), Speed wins (×1.3), Win streaks (×1.2).
+- Stacking multipliers up to ×4.68 for maximum NP potential.

@@ -35,12 +35,21 @@ class WordBank:
         Extend this with more categories and words as needed.
         """
         self.categories = {
-            "general": ["python", "hangman", "developer", "keyboard", "algorithm", "variable"],
-            "animals": ["elephant", "giraffe", "kangaroo", "alligator", "platypus", "rhinoceros"],
-            "fruits": ["banana", "strawberry", "pineapple", "watermelon", "blueberry", "pomegranate"],
-            "movies": ["inception", "gladiator", "titanic", "avatar", "matrix", "godfather"],
-            "countries": ["australia", "brazil", "canada", "denmark", "egypt", "france"],
-            "science": ["physics", "chemistry", "biology", "astronomy", "quantum", "gravity"],
+            "general": ["python", "hangman", "developer", "keyboard", "algorithm", "variable", "database", "interface", "framework", "encryption"],
+            "animals": ["elephant", "giraffe", "kangaroo", "alligator", "platypus", "rhinoceros", "penguin", "cheetah", "dolphin", "octopus"],
+            "fruits": ["banana", "strawberry", "pineapple", "watermelon", "blueberry", "pomegranate", "mango", "kiwi", "coconut", "papaya"],
+            "movies": ["inception", "gladiator", "titanic", "avatar", "matrix", "godfather", "interstellar", "joker", "parasite", "dune"],
+            "countries": ["australia", "brazil", "canada", "denmark", "egypt", "france", "japan", "mexico", "norway", "portugal"],
+            "science": ["physics", "chemistry", "biology", "astronomy", "quantum", "gravity", "evolution", "molecule", "ecosystem", "hypothesis"],
+            "winter 2025": ["blizzard", "snowflake", "hibernate", "avalanche", "frostbite", "snowstorm", "icicle", "reindeer", "polar", "solstice"],
+            "minecraft": ["creeper", "diamond", "crafting", "redstone", "zombie", "steve", "enderman", "nether", "obsidian", "enchantment"],
+            "among us": ["impostor", "suspect", "vent", "emergency", "crewmate", "sabotage", "medbay", "reactor", "oxygen", "electrical"],
+            "fortnite": ["battle", "victory", "chug", "storm", "island", "building", "zero", "marvel", "legendary", "supply"],
+            "coding": ["boolean", "function", "variable", "debug", "syntax", "compile", "recursion", "iteration", "polymorphism", "abstraction"],
+            "space": ["galaxy", "nebula", "astronaut", "telescope", "planet", "asteroid", "cosmos", "satellite", "meteor", "universe"],
+            "superheroes": ["thor", "wonder", "batman", "superman", "hulk", "widow", "panther", "vision", "quicksilver", "antman"],
+            "fantasy": ["dragon", "wizard", "kingdom", "sorcery", "potion", "unicorn", "dungeon", "phoenix", "troll", "enchanted"],
+            "ocean": ["submarine", "coral", "shipwreck", "treasure", "hurricane", "lighthouse", "buoy", "tsunami", "whale", "dolphin"],
         }
 
     def getCategories(self) -> List[str]:

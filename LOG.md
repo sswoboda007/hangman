@@ -197,3 +197,30 @@ Example
   ```
 - **Analysis:** The UI overflow was resolved by changing the keyboard to a 3-row layout. This change broke the test suite because the `hangmanApp` fixture's mock for `tk.Frame` had a hardcoded number of side effects. The fixture was updated to use a `side_effect` function, making it robust to changes in the number of frames. All tests now pass.
 - **Next Step:** The keyboard is now fully visible and the test suite is stable. Ready for the next task.
+
+---
+## [LOG - 014] 2025-12-25: Update UI Test Expected Button Colors for 2026 Theme
+
+- **Action:** Ran `pytest hangmanTests`.
+- **Result:** `FAIL`. 48 passed, 1 failed.
+- **Salient Output:**
+  ```
+  FAILED hangmanTests/test_uiTkinter.py::testUpdateButtonsDisablesUsedLetters
+  Expected: Button.config(state='disabled', bg='#2a2a3e', fg='#555555')
+    Actual: Button.config(state='disabled', bg='#333366', fg='#6666ff')
+  ```
+
+---
+## [LOG - 015] 2025-12-25: Restore Reliable Main-Window Scrolling for Small Window Sizes
+
+- **Action:** Updated `uiTkinter.py` to restore reliable vertical scrolling when the app window is made smaller.
+- **Result:** **User-reported** `PASS` (scrolling works when the window is small).
+- **Salient Implementation Details:**
+  - Replaced the prior non-scrolling layout with a standard Tk pattern:
+    - One main `tk.Canvas` + vertical `tk.Scrollbar`
+    - A `scroll_root` frame embedded via `Canvas.create_window(...)`
+  - Added `<Configure>` handlers:
+    - Update `scrollregion` from `canvas.bbox("all")` when content size changes.
+    - Keep embedded window width synced to the canvas width so content wraps/resizes correctly.
+  - Bound mousewheel scrolling to the canvas.
+- **Analysis:** The previous “auto-size only” approach prevented access to lower UI controls when the window was reduced in height. Using a single scroll container for the whole UI makes the layout robust at any window size.

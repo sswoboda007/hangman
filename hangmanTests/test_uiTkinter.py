@@ -54,11 +54,13 @@ def hangmanApp():
 
         mock_label = stack.enter_context(patch('tkinter.Label'))
         category_label = MagicMock(name="CategoryLabel")
-        bonus_label = MagicMock(name="BonusLabel") # Added for futuristic UI
+        title_label = MagicMock(name="TitleLabel")
+        subtitle_label = MagicMock(name="SubtitleLabel")
         word_label = MagicMock(name="WordLabel")
         info_label = MagicMock(name="InfoLabel")
-        # Updated side_effect to include bonus_label
-        mock_label.side_effect = [category_label, bonus_label, word_label, info_label]
+        keyboard_title = MagicMock(name="KeyboardTitleLabel")
+        # Updated side_effect to include all labels (bonus_label removed)
+        mock_label.side_effect = [category_label, title_label, subtitle_label, word_label, info_label, keyboard_title]
 
         mock_frame = stack.enter_context(patch('tkinter.Frame'))
         # Use a side_effect function for robust frame mocking
@@ -160,7 +162,7 @@ def testUpdateLabelsRefreshesWordAndInfo(hangmanApp) -> None:
 
     assert ns.wordLabel.config.call_args_list[-1] == call(text="t _ _ t")
     # Updated for futuristic UI text
-    assert "Lives: 6/6" in ns.infoLabel.config.call_args_list[-1][1]['text']
+    assert "◉ ENERGY: 6/6" in ns.infoLabel.config.call_args_list[-1][1]['text']
 
 
 def testOnGuessHandlesInputAndUpdatesUi(hangmanApp) -> None:
@@ -216,7 +218,7 @@ def testOnGuessHandlesWinAndLoss(hangmanApp) -> None:
 
     # Updated for futuristic UI text
     args, _ = ns.messagebox.showinfo.call_args
-    assert "Neural Victory!" in args[0]
+    assert "◉ DECRYPTION SUCCESS!" in args[0]
     ns.app.letter_buttons['A'].config.assert_called_with(state=tk.DISABLED)
     ns.wordLabel.config.assert_called_with(fg="#00ff41")
 
@@ -230,7 +232,7 @@ def testOnGuessHandlesWinAndLoss(hangmanApp) -> None:
 
     # Updated for futuristic UI text
     args, _ = ns.messagebox.showinfo.call_args
-    assert "System Breach!" in args[0]
+    assert "◉ SYSTEM BREACH DETECTED" in args[0]
     ns.app.letter_buttons['B'].config.assert_called_with(state=tk.DISABLED)
 
 
@@ -239,10 +241,10 @@ def testUpdateButtonsDisablesUsedLetters(hangmanApp) -> None:
     ns.gameInstance.used_letters = {"a", "z"}
     
     ns.app._updateButtons()
-    
-    ns.app.letter_buttons['A'].config.assert_called_with(state=tk.DISABLED, bg="#333333", fg="#666")
-    ns.app.letter_buttons['Z'].config.assert_called_with(state=tk.DISABLED, bg="#333333", fg="#666")
-    ns.app.letter_buttons['B'].config.assert_called_with(state=tk.NORMAL, bg="#16213e", fg="#00ffff")
+
+    ns.app.letter_buttons['A'].config.assert_called_with(state=tk.DISABLED, bg="#333366", fg="#6666ff")
+    ns.app.letter_buttons['Z'].config.assert_called_with(state=tk.DISABLED, bg="#333366", fg="#6666ff")
+    ns.app.letter_buttons['B'].config.assert_called_with(state=tk.NORMAL, bg="#00ffff", fg="#000000")
 
 
 def testPhysicalKeyBinding(hangmanApp) -> None:
@@ -271,9 +273,11 @@ def testUpdateCanvasDrawsAllBodyParts(hangmanApp) -> None:
     # Should clear canvas
     ns.canvas.delete.assert_called_with("all")
 
-    # Gallows (4 lines) + Head (2 ovals) + Body (1 line) + 4 Limbs (4 lines) = 9 lines
-    assert ns.canvas.create_line.call_count == 9
-    assert ns.canvas.create_oval.call_count == 2
+    # Gallows: 4 lines (pillar, beam, rope, body) + 4 limbs = 8 lines
+    # Rectangle is drawn with create_rectangle, not create_line
+    assert ns.canvas.create_line.call_count == 8
+    # Ovals: energy node + 2 head + 2 neural nodes + core reactor + 2 arm endpoints + 2 leg endpoints = 9
+    assert ns.canvas.create_oval.call_count == 9
     assert ns.canvas.create_oval.called
 
 
@@ -311,7 +315,7 @@ def testHintButtonCallsUseHint(hangmanApp) -> None:
         ns.gameInstance.useHint.assert_called_once()
         # Updated for futuristic UI text
         args, _ = ns.messagebox.showinfo.call_args
-        assert "Neural Hint" in args[0]
+        assert "◉ QUANTUM SCAN COMPLETE" in args[0]
         mock_refresh.assert_called_once()
 
 def testHintButtonShowsWarningIfFailed(hangmanApp) -> None:
@@ -325,7 +329,7 @@ def testHintButtonShowsWarningIfFailed(hangmanApp) -> None:
     
     # Updated for futuristic UI text
     args, _ = ns.messagebox.showwarning.call_args
-    assert "Neural Hint Unavailable" in args[0]
+    assert "Quantum Hint Unavailable" in args[0]
 
 def testUpdateHintButtonDisablesIfLowLives(hangmanApp) -> None:
     """
